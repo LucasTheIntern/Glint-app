@@ -18,15 +18,22 @@
         <div class="stats">
             <span id="stat-count">0/0</span> | 
             <span id="stat-keep" class="keep-text">0% Keep</span> | 
-            <span id="stat-reject" class="reject-text">0% Reject</span>
+            <span id="stat-reject" class="reject-text">0% Reject</span> |
+            <span id="stat-burst" class="burst-text">Burst: None</span>
         </div>
         <div class="current-status">
+            Rating: <span id="current-rating" class="rating-text">☆☆☆☆☆</span> | 
             Status: <span id="current-flag">None</span>
         </div>
     </div>
 
     <div id="workspace" class="hidden">
         <div id="grid-view" class="view-mode"></div>
+        <div id="zoom-view" class="view-mode hidden"></div>
+        <div id="compare-view" class="view-mode hidden">
+            <div id="compare-left" class="compare-pane"></div>
+            <div id="compare-right" class="compare-pane"></div>
+        </div>
     </div>
 
     <script src="app.js"></script>
