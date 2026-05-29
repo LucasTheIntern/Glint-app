@@ -1,52 +1,67 @@
 :root {
-    --bg: #0b0b0b;
-    --bg-light: #161616;
-    --accent: #d4af37;
-    --keep: #2ecc71;
-    --reject: #e74c3c;
-    --burst: #3498db;
-    --text: #ffffff;
+    /* TARDIS ALIEN PALETTE */
+    --bg-core: #040911; /* Deepest space */
+    --bg-void: #010203; /* Absolute black */
+    --bg-glass: rgba(10, 18, 25, 0.4);
     
-    /* Dynamic Aspect Ratio Variable */
+    --accent: #00ffcc; /* Hard-light Cyan */
+    --accent-dim: rgba(0, 255, 204, 0.2);
+    --keep: #00e676; /* Bright neon green */
+    --reject: #ff1744; /* Alert red */
+    --burst: #ffb703; /* Temporal amber */
+    --text: #e0f7fa;
+    
     --box-ar: 3/2; 
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
+/* 1. AMBIENT BREATHING VOID */
 body {
-    background-color: var(--bg);
+    background: radial-gradient(circle at 50% 50%, var(--bg-core) 0%, var(--bg-void) 100%);
+    background-size: 150% 150%;
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Courier New', Courier, monospace; /* Terminal aesthetic */
     overflow: hidden;
+    animation: voidPulse 10s ease-in-out infinite alternate;
+}
+
+@keyframes voidPulse {
+    0% { background-position: center; }
+    100% { background-position: top right; }
 }
 
 .hidden { display: none !important; }
 
 /* Startup UI */
 #startup { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: relative; }
-button { background-color: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 12px 24px; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: all 0.2s; margin-top: 20px; }
-button:hover { background-color: var(--accent); color: var(--bg); }
-.version-tag { position: absolute; bottom: 20px; color: #555; font-size: 0.8rem; letter-spacing: 1px; }
+#startup h1 { color: var(--accent); letter-spacing: 5px; text-shadow: 0 0 20px var(--accent-dim); }
+button { background-color: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 12px 24px; font-size: 1rem; font-family: inherit; cursor: pointer; border-radius: 2px; transition: all 0.3s; margin-top: 20px; box-shadow: 0 0 10px var(--accent-dim) inset; }
+button:hover { background-color: var(--accent); color: var(--bg-void); box-shadow: 0 0 20px var(--accent); }
+.version-tag { position: absolute; bottom: 20px; color: rgba(224, 247, 250, 0.3); font-size: 0.8rem; letter-spacing: 2px; }
 
-/* HUD Overlay */
-#hud {
-    position: fixed; top: 20px; left: 20px; right: 20px;
-    display: flex; justify-content: space-between; align-items: center;
-    z-index: 100; pointer-events: none; font-size: 0.9rem; opacity: 0.8;
-}
+/* 2. GALLIFREYAN HUD */
+#hud { position: fixed; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 100; pointer-events: none; }
+.current-status { background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 4px; border: 1px solid #222; backdrop-filter: blur(5px); display: flex; align-items: center; font-size: 0.9rem;}
+
+/* SVG Rings */
+.ring-container { position: relative; width: 100px; height: 100px; filter: drop-shadow(0 0 10px rgba(0,255,204,0.3)); }
+.gallifreyan-rings { width: 100%; height: 100%; transform: rotate(-90deg); /* Starts 12 o'clock */ }
+.ring-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 3; }
+.inner-spin { animation: spin 20s linear infinite; stroke-width: 1; stroke: rgba(255,183,3,0.5); }
+.ring-data { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ring-keep { stroke: var(--keep); stroke-dasharray: 314.15; stroke-dashoffset: 314.15; } /* r=50, c=314.15 */
+.ring-reject { stroke: var(--reject); stroke-dasharray: 251.32; stroke-dashoffset: 251.32; } /* r=40, c=251.32 */
+.ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 5px var(--accent); }
+
+@keyframes spin { 100% { transform: rotate(360deg); transform-origin: 60px 60px; } }
 
 .hud-version { color: #555; margin-left: 10px; font-size: 0.8rem; }
 .divider { margin: 0 10px; color: #444; }
-
-/* Interactive HUD Elements */
-.hud-select {
-    background: transparent; color: var(--accent); border: 1px solid #333; 
-    border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; pointer-events: auto;
-    outline: none; cursor: pointer;
-}
-.hud-select option { background: var(--bg-light); color: var(--text); }
-.icon-btn { margin: 0 0 0 10px; padding: 0; border: none; font-size: 0.9rem; pointer-events: auto; opacity: 0.6; }
-.icon-btn:hover { background: none; color: var(--accent); opacity: 1; }
+.hud-select { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 2px; padding: 4px 8px; font-family: inherit; font-size: 0.8rem; pointer-events: auto; outline: none; cursor: pointer; }
+.hud-select option { background: var(--bg-core); color: var(--text); }
+.icon-btn { margin: 0 0 0 10px; padding: 0; border: none; font-size: 0.9rem; pointer-events: auto; opacity: 0.6; box-shadow: none; }
+.icon-btn:hover { background: none; color: var(--burst); opacity: 1; box-shadow: none; }
 
 .keep-text { color: var(--keep); }
 .reject-text { color: var(--reject); }
@@ -57,70 +72,87 @@ button:hover { background-color: var(--accent); color: var(--bg); }
 #workspace { height: 100vh; width: 100vw; position: relative; }
 .view-mode { width: 100%; height: 100%; }
 
-/* --- FLAT 2D CAROUSEL --- */
+/* 3. TIME VORTEX 3D ENGINE */
 #carousel-view {
     position: relative;
     width: 100vw;
     height: 100vh;
-    background-color: var(--bg);
-    /* Removed 3D perspective */
+    perspective: 1500px; /* Deep temporal tunnel */
+    transform-style: preserve-3d;
 }
 
 .carousel-slot {
     position: absolute;
     top: 50%; 
-    
-    /* Bumped back to 40vw */
     width: 40vw; 
     max-width: 1200px;
     aspect-ratio: var(--box-ar);
     
-    background: #111; 
-    border-radius: 6px;
+    /* Holographic Glass */
+    background: var(--bg-glass); 
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--accent-dim);
+    border-radius: 4px;
     
     transform-origin: center center;
-    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-                opacity 0.35s ease-out, 
-                filter 0.35s ease-out;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                opacity 0.4s ease-out, 
+                filter 0.4s ease-out;
                 
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
     overflow: hidden; 
+}
+
+/* 4. THE INTERACTIVE GLARE */
+.pos-0::after {
+    content: ''; 
+    position: absolute; 
+    inset: 0; 
+    z-index: 20; 
+    pointer-events: none;
+    /* Glare tracks mouse variables injected via JS */
+    background: radial-gradient(
+        600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+        rgba(0, 255, 204, 0.15), 
+        transparent 50%
+    );
+    mix-blend-mode: screen;
 }
 
 .carousel-slot img {
     width: 100%;
     height: 100%;
-    /* STRICT ENFORCEMENT: Never crop, always map to box */
+    /* STRICT ANTI-CROP */
     object-fit: contain !important; 
     background: transparent !important;
 }
 
-/* 2D FLAT TIGHT GEOMETRY + BLUR (DEPTH OF FIELD) */
-/* Center = 40vw. Spans 30% to 70% */
-.pos-0  { left: 50%; transform: translate(-50%, -50%) scale(1); opacity: 1; z-index: 10; filter: blur(0px); box-shadow: 0 0 0 1px #333, 0 20px 50px rgba(0,0,0,0.8); }
+/* VORTEX TUNNEL GEOMETRY */
+/* Center Focus */
+.pos-0  { left: 50%; transform: translate(-50%, -50%) translateZ(0) rotateY(0deg); opacity: 1; z-index: 10; filter: blur(0px); box-shadow: 0 0 0 1px var(--accent), 0 0 40px var(--accent-dim); }
 
-/* L1/R1 = 55% Scale (22vw physical width). Spans 7% to 29% and 71% to 93%. */
-.pos-n1 { left: 18%; transform: translate(-50%, -50%) scale(0.55); opacity: 0.7; z-index: 5; filter: blur(2px); }
-.pos-p1 { left: 82%; transform: translate(-50%, -50%) scale(0.55); opacity: 0.7; z-index: 5; filter: blur(2px); }
+/* Drifting Back L1/R1 (Rotated inward, fading) */
+.pos-n1 { left: 18%; transform: translate(-50%, -50%) translateZ(-300px) rotateY(25deg);  opacity: 0.6; z-index: 5; filter: blur(2px); }
+.pos-p1 { left: 82%; transform: translate(-50%, -50%) translateZ(-300px) rotateY(-25deg); opacity: 0.6; z-index: 5; filter: blur(2px); }
 
-/* L2/R2 = 20% Scale (8vw physical width). Spans -2% to 6% and 94% to 102%. */
-.pos-n2 { left: 2%;  transform: translate(-50%, -50%) scale(0.2); opacity: 0.3; z-index: 2; filter: blur(5px); }
-.pos-p2 { left: 98%; transform: translate(-50%, -50%) scale(0.2); opacity: 0.3; z-index: 2; filter: blur(5px); }
+/* Deep Tunnel L2/R2 (Steep curve, heavy blur) */
+.pos-n2 { left: 2%;  transform: translate(-50%, -50%) translateZ(-800px) rotateY(45deg); opacity: 0.15; z-index: 2; filter: blur(6px); border-color: transparent;}
+.pos-p2 { left: 98%; transform: translate(-50%, -50%) translateZ(-800px) rotateY(-45deg);opacity: 0.15; z-index: 2; filter: blur(6px); border-color: transparent;}
 
-/* Flag Overrides */
-.carousel-slot.flag-keep { box-shadow: 0 0 0 4px var(--keep); opacity: 1; }
-.carousel-slot.flag-reject { opacity: 0.1; filter: grayscale(100%); box-shadow: 0 0 0 2px var(--reject); }
+/* Flags */
+.carousel-slot.flag-keep { box-shadow: 0 0 0 2px var(--keep), 0 0 30px rgba(0, 230, 118, 0.3); }
+.carousel-slot.flag-reject { opacity: 0.1; filter: grayscale(100%) blur(2px); box-shadow: 0 0 0 1px var(--reject); }
 .carousel-slot.empty-slot { opacity: 0 !important; pointer-events: none; }
 
-/* Zoom & Compare */
-#zoom-view { position: fixed; inset: 0; background-color: var(--bg); background-size: contain; background-position: center; background-repeat: no-repeat; z-index: 50; }
-#compare-view { position: fixed; inset: 0; display: flex; background-color: var(--bg); z-index: 50; }
-.compare-pane { flex: 1; height: 100%; background-size: contain; background-position: center; background-repeat: no-repeat; border-right: 1px solid #222; }
+/* Compare & Zoom */
+#zoom-view { position: fixed; inset: 0; background-color: var(--bg-core); background-size: contain; background-position: center; background-repeat: no-repeat; z-index: 50; }
+#compare-view { position: fixed; inset: 0; display: flex; background-color: var(--bg-core); z-index: 50; }
+.compare-pane { flex: 1; height: 100%; background-size: contain; background-position: center; background-repeat: no-repeat; border-right: 1px solid #111; }
 
-/* Hotkey Modal */
-#hotkey-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 200; }
-.modal-content { background: var(--bg-light); padding: 40px; border-radius: 8px; border: 1px solid #333; min-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+/* Protocol Modal */
+#hotkey-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 200; }
+.modal-content { background: var(--bg-glass); padding: 40px; border-radius: 4px; border: 1px solid var(--accent-dim); min-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
 .modal-content h2 { color: var(--accent); margin-bottom: 30px; font-weight: normal; letter-spacing: 2px; }
 .hotkey-grid { display: grid; grid-template-columns: auto 1fr; gap: 15px 20px; text-align: left; align-items: center; margin-bottom: 30px; font-size: 0.95rem; }
-kbd { background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; border-bottom: 2px solid #111; }
+kbd { background: #000; color: var(--accent); padding: 4px 8px; border-radius: 2px; font-family: monospace; font-size: 0.85rem; border: 1px solid #333; }
