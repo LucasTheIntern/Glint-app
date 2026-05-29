@@ -1,116 +1,72 @@
 :root {
     --bg: #0b0b0b;
-    --accent: #d4af37; /* Warm Gold */
+    --bg-light: #1a1a1a;
+    --accent: #d4af37;
     --keep: #2ecc71;
     --reject: #e74c3c;
+    --burst: #3498db;
     --text: #ffffff;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    user-select: none;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
 body {
     background-color: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    overflow: hidden; /* App feel */
+    overflow: hidden;
 }
 
-.hidden {
-    display: none !important;
-}
+.hidden { display: none !important; }
 
 /* Startup UI */
-#startup {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
-
-button {
-    background-color: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    padding: 12px 24px;
-    font-size: 1rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s;
-    margin-top: 20px;
-}
-
-button:hover {
-    background-color: var(--accent);
-    color: var(--bg);
-}
+#startup { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+button { background-color: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 12px 24px; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: all 0.2s; margin-top: 20px; }
+button:hover { background-color: var(--accent); color: var(--bg); }
 
 /* HUD Overlay */
 #hud {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    display: flex;
-    justify-content: space-between;
-    z-index: 100;
-    pointer-events: none;
-    font-size: 0.9rem;
-    opacity: 0.8;
+    position: fixed; top: 20px; left: 20px; right: 20px;
+    display: flex; justify-content: space-between;
+    z-index: 100; pointer-events: none; font-size: 0.9rem; opacity: 0.8;
 }
 
 .keep-text { color: var(--keep); }
 .reject-text { color: var(--reject); }
+.burst-text { color: var(--burst); }
+.rating-text { color: var(--accent); letter-spacing: 2px; }
+
+/* Workspace */
+#workspace { height: 100vh; overflow-y: auto; padding: 60px 20px 20px; }
+.view-mode { width: 100%; height: 100%; }
 
 /* Grid View */
-#workspace {
-    height: 100vh;
-    overflow-y: auto;
-    padding: 60px 20px 20px;
-}
-
-#grid-view {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-}
+#grid-view { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; align-content: flex-start; }
 
 .thumbnail-container {
-    position: relative;
-    aspect-ratio: 3/2;
-    background: #1a1a1a;
-    border-radius: 4px;
-    overflow: hidden;
-    transition: transform 0.1s, box-shadow 0.1s;
-    opacity: 0.5; /* Dimmed until focused */
+    position: relative; aspect-ratio: 3/2; background: var(--bg-light);
+    border-radius: 4px; overflow: hidden; transition: transform 0.1s, box-shadow 0.1s;
+    opacity: 0.5;
 }
 
-.thumbnail-container.active {
-    opacity: 1;
-    transform: scale(1.05);
-    box-shadow: 0 0 0 2px var(--accent);
-    z-index: 10;
+.thumbnail-container.active { opacity: 1; transform: scale(1.05); box-shadow: 0 0 0 2px var(--accent); z-index: 10; }
+.thumbnail-container img { width: 100%; height: 100%; object-fit: cover; }
+
+/* States */
+.thumbnail-container.flag-keep { box-shadow: 0 0 0 3px var(--keep); opacity: 1; }
+.thumbnail-container.flag-reject { opacity: 0.2; filter: grayscale(100%); box-shadow: 0 0 0 3px var(--reject); }
+
+/* Zoom View */
+#zoom-view {
+    position: fixed; inset: 0; background-color: var(--bg);
+    background-size: contain; background-position: center; background-repeat: no-repeat; z-index: 50;
 }
 
-.thumbnail-container img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* Compare View */
+#compare-view {
+    position: fixed; inset: 0; display: flex; background-color: var(--bg); z-index: 50;
 }
-
-/* Micro-interactions */
-.thumbnail-container.flag-keep {
-    box-shadow: 0 0 0 3px var(--keep);
-    opacity: 1;
-}
-
-.thumbnail-container.flag-reject {
-    opacity: 0.2;
-    filter: grayscale(100%);
-    box-shadow: 0 0 0 3px var(--reject);
+.compare-pane {
+    flex: 1; height: 100%; background-size: contain; background-position: center; background-repeat: no-repeat;
+    border-right: 1px solid var(--bg-light);
 }
