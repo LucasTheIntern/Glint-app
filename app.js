@@ -1,10 +1,13 @@
+// BUMP VERSION HERE
+const VERSION = "v1.4";
+
 const state = {
     images: [],
     clusters: [],
     currentIndex: 0,
     flags: { KEEP: new Set(), REJECT: new Set() },
     ratings: {},
-    view: 'GRID',
+    view: 'CAROUSEL', // Default view changed to Carousel
     helpOpen: false
 };
 
@@ -12,7 +15,7 @@ const UI = {
     startup: document.getElementById('startup'),
     workspace: document.getElementById('workspace'),
     hud: document.getElementById('hud'),
-    grid: document.getElementById('grid-view'),
+    carousel: document.getElementById('carousel-view'),
     zoom: document.getElementById('zoom-view'),
     compare: document.getElementById('compare-view'),
     compareLeft: document.getElementById('compare-left'),
@@ -25,15 +28,19 @@ const UI = {
     rating: document.getElementById('current-rating'),
     helpBtn: document.getElementById('btn-help'),
     helpModal: document.getElementById('hotkey-modal'),
-    closeHelp: document.getElementById('btn-close-help')
+    closeHelp: document.getElementById('btn-close-help'),
+    startupVersion: document.getElementById('startup-version'),
+    hudVersion: document.getElementById('hud-version')
 };
+
+UI.startupVersion.innerText = VERSION;
+UI.hudVersion.innerText = VERSION;
 
 // --- MODAL LOGIC ---
 function toggleHelp() {
     state.helpOpen = !state.helpOpen;
     UI.helpModal.classList.toggle('hidden', !state.helpOpen);
 }
-
 UI.helpBtn.addEventListener('click', toggleHelp);
 UI.closeHelp.addEventListener('click', toggleHelp);
 
@@ -57,7 +64,7 @@ async function scanImages(dirHandle) {
                 handle: entry,
                 name: entry.name,
                 timestamp: file.lastModified,
-                url: URL.createObjectURL(file)
+                url: URL.createObjectURL(file) 
             });
         }
     }
@@ -97,22 +104,51 @@ function bootEngine() {
     UI.workspace.classList.remove('hidden');
     UI.hud.classList.remove('hidden');
     
-    renderGrid();
     updateView();
     registerHotkeys();
 }
 
-function renderGrid() {
-    UI.grid.innerHTML = '';
-    state.images.forEach((img, i) => {
-        const div = document.createElement('div');
-        div.className = `thumbnail-container`;
-        div.id = `thumb-${i}`;
-        const el = document.createElement('img');
-        el.src = img.url;
-        el.loading = "lazy";
-        div.appendChild(el);
-        UI.grid.appendChild(div);
+function renderCarousel() {
+    if(state.images.length === 0) return;
+
+    // The 5 static DOM slots
+    const slots = [
+        { id: 'slot-n2', offset: -2 },
+        { id: 'slot-n1', offset: -1 },
+        { id: 'slot-0',  offset: 0 },
+        { id: 'slot-p1', offset: 1 },
+        { id: 'slot-p2', offset: 2 }
+    ];
+
+    slots.forEach(slotInfo => {
+        const targetIndex = state.currentIndex + slotInfo.offset;
+        const slotEl = document.getElementById(slotInfo.id);
+
+        // Check edges (don't loop)
+        if (targetIndex >= 0 && targetIndex < state.images.length) {
+            const imgData = state.images[targetIndex];
+            
+            // Re-use or inject image tag
+            let imgEl = slotEl.querySelector('img');
+            if (!imgEl) {
+                imgEl = document.createElement('img');
+                slotEl.appendChild(imgEl);
+            }
+            imgEl.src = imgData.url;
+            
+            // Clean slate classes, re-apply base
+            slotEl.className = 'carousel-slot';
+            if (slotInfo.offset === 0) slotEl.classList.add('active'); // Center is active
+            
+            // Apply KEEP/REJECT visual flags
+            if (state.flags.KEEP.has(imgData.name)) slotEl.classList.add('flag-keep');
+            if (state.flags.REJECT.has(imgData.name)) slotEl.classList.add('flag-reject');
+            
+        } else {
+            // Null state for edges (first 2 and last 2 photos)
+            slotEl.innerHTML = '';
+            slotEl.className = 'carousel-slot empty';
+        }
     });
 }
 
@@ -120,11 +156,13 @@ function updateView() {
     if(state.images.length === 0) return;
     const img = state.images[state.currentIndex];
     
-    UI.grid.classList.toggle('hidden', state.view !== 'GRID');
+    UI.carousel.classList.toggle('hidden', state.view !== 'CAROUSEL');
     UI.zoom.classList.toggle('hidden', state.view !== 'ZOOM');
     UI.compare.classList.toggle('hidden', state.view !== 'COMPARE');
 
-    if (state.view === 'ZOOM') {
+    if (state.view === 'CAROUSEL') {
+        renderCarousel();
+    } else if (state.view === 'ZOOM') {
         UI.zoom.style.backgroundImage = `url('${img.url}')`;
     } else if (state.view === 'COMPARE') {
         const burst = getActiveBurst();
@@ -162,30 +200,21 @@ function updateHUD() {
     } else {
         UI.burst.innerText = "Burst: None";
     }
-    
-    document.querySelectorAll('.thumbnail-container').forEach(el => el.classList.remove('active'));
-    const activeEl = document.getElementById(`thumb-${state.currentIndex}`);
-    if(activeEl && state.view === 'GRID') {
-        activeEl.classList.add('active');
-        activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
 }
 
 // --- ENGINE LOGIC ---
 function markImage(type) {
     const img = state.images[state.currentIndex];
-    const el = document.getElementById(`thumb-${state.currentIndex}`);
     
     if (type === 'KEEP') {
         state.flags.KEEP.add(img.name);
         state.flags.REJECT.delete(img.name);
-        el.className = 'thumbnail-container active flag-keep';
     } else if (type === 'REJECT') {
         state.flags.REJECT.add(img.name);
         state.flags.KEEP.delete(img.name);
-        el.className = 'thumbnail-container active flag-reject';
     }
     
+    // Auto-advance
     if (state.currentIndex < state.images.length - 1) state.currentIndex++;
     updateView();
 }
@@ -196,7 +225,6 @@ async function deleteCurrentImage() {
         await img.handle.remove();
         state.images.splice(state.currentIndex, 1);
         URL.revokeObjectURL(img.url);
-        document.getElementById(`thumb-${img.index}`).remove();
         
         if (state.currentIndex >= state.images.length) state.currentIndex--;
         groupBursts();
@@ -230,16 +258,16 @@ function registerHotkeys() {
             case 'D': deleteCurrentImage(); break;
             case ' ': 
                 e.preventDefault();
-                state.view = state.view === 'ZOOM' ? 'GRID' : 'ZOOM';
+                state.view = state.view === 'ZOOM' ? 'CAROUSEL' : 'ZOOM';
                 updateView();
                 break;
             case 'TAB':
                 e.preventDefault();
-                state.view = state.view === 'COMPARE' ? 'GRID' : 'COMPARE';
+                state.view = state.view === 'COMPARE' ? 'CAROUSEL' : 'COMPARE';
                 updateView();
                 break;
             case 'G':
-                state.view = 'GRID';
+                state.view = 'CAROUSEL';
                 updateView();
                 break;
             case '1': case '2': case '3': case '4': case '5':
