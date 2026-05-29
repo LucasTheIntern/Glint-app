@@ -6,6 +6,9 @@
     --reject: #e74c3c;
     --burst: #3498db;
     --text: #ffffff;
+    
+    /* Dynamic Aspect Ratio Variable */
+    --box-ar: 3/2; 
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
@@ -33,6 +36,15 @@ button:hover { background-color: var(--accent); color: var(--bg); }
 }
 
 .hud-version { color: #555; margin-left: 10px; font-size: 0.8rem; }
+.divider { margin: 0 10px; color: #444; }
+
+/* Interactive HUD Elements */
+.hud-select {
+    background: transparent; color: var(--accent); border: 1px solid #333; 
+    border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; pointer-events: auto;
+    outline: none; cursor: pointer;
+}
+.hud-select option { background: var(--bg-light); color: var(--text); }
 .icon-btn { margin: 0 0 0 10px; padding: 0; border: none; font-size: 0.9rem; pointer-events: auto; opacity: 0.6; }
 .icon-btn:hover { background: none; color: var(--accent); opacity: 1; }
 
@@ -45,51 +57,59 @@ button:hover { background-color: var(--accent); color: var(--bg); }
 #workspace { height: 100vh; width: 100vw; position: relative; }
 .view-mode { width: 100%; height: 100%; }
 
-/* --- 3D CAROUSEL VIEW --- */
+/* --- RIGID 3D CAROUSEL --- */
 #carousel-view {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
     background-color: var(--bg);
-    perspective: 1200px; /* Gives the 3D depth */
+    perspective: 1200px; 
     transform-style: preserve-3d;
 }
 
 .carousel-slot {
     position: absolute;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 50%; /* Vertical center alignment anchor */
+    
+    /* Rigid Box Sizing */
+    width: 40vw; 
+    max-width: 1200px;
+    aspect-ratio: var(--box-ar);
+    
+    background: #111; /* Box color behind image */
     border-radius: 6px;
-    background: var(--bg-light);
     
-    /* Intelligent Sizing */
-    width: 50vw; 
-    height: 70vh;
-    max-width: 1400px;
+    /* Center origin for perfect scaling */
+    transform-origin: center center;
     
-    /* The snappy spring animation */
+    /* Snappy swing animation */
     transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                left 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
                 opacity 0.35s ease-out, 
                 filter 0.35s;
+                
     box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    overflow: hidden; /* Keep images inside the rigid box */
 }
 
 .carousel-slot img {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Prevents cropping, respects aspect ratio */
-    border-radius: 6px;
+    object-fit: contain; /* Never crop. Fit inside box. */
+    background: #000;
 }
 
-/* 3D Geometry Positions */
-.pos-0  { transform: translateX(0) translateZ(0) rotateY(0); opacity: 1; z-index: 10; box-shadow: 0 0 0 1px #333, 0 20px 50px rgba(0,0,0,0.8); }
-.pos-n1 { transform: translateX(-45%) translateZ(-250px) rotateY(20deg); opacity: 0.5; z-index: 5; }
-.pos-p1 { transform: translateX(45%) translateZ(-250px) rotateY(-20deg); opacity: 0.5; z-index: 5; }
-.pos-n2 { transform: translateX(-80%) translateZ(-500px) rotateY(35deg); opacity: 0.15; z-index: 2; }
-.pos-p2 { transform: translateX(80%) translateZ(-500px) rotateY(-35deg); opacity: 0.15; z-index: 2; }
+/* ZERO-OVERLAP GEOMETRY */
+/* Center = 40vw. Spans 30% to 70% of screen width */
+.pos-0  { left: 50%; transform: translate(-50%, -50%) scale(1)   rotateY(0deg);   opacity: 1;    z-index: 10; box-shadow: 0 0 0 1px #333, 0 20px 50px rgba(0,0,0,0.8); }
+
+/* L1/R1 = 24vw width (40 * 0.60). L1 spans 5% to 29%. R1 spans 71% to 95%. No overlap. */
+.pos-n1 { left: 17%; transform: translate(-50%, -50%) scale(0.6) rotateY(15deg);  opacity: 0.6;  z-index: 5; }
+.pos-p1 { left: 83%; transform: translate(-50%, -50%) scale(0.6) rotateY(-15deg); opacity: 0.6;  z-index: 5; }
+
+/* L2/R2 = 10vw width (40 * 0.25). L2 spans -1% to 9%. R2 spans 91% to 101%. No overlap. */
+.pos-n2 { left: 4%;  transform: translate(-50%, -50%) scale(0.25) rotateY(25deg); opacity: 0.15; z-index: 2; }
+.pos-p2 { left: 96%; transform: translate(-50%, -50%) scale(0.25) rotateY(-25deg);opacity: 0.15; z-index: 2; }
 
 /* Flag Overrides */
 .carousel-slot.flag-keep { box-shadow: 0 0 0 4px var(--keep); opacity: 1; }
