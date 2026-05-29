@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLINT</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div id="startup">
+        <h1>GLINT</h1>
+        <p>A frictionless culling engine.</p>
+        <button id="btn-open">Select Folder</button>
+    </div>
+
+    <div id="hud" class="hidden">
+        <div class="stats">
+            <span id="stat-count">0/0</span> | 
+            <span id="stat-keep" class="keep-text">0% Keep</span> | 
+            <span id="stat-reject" class="reject-text">0% Reject</span>
+        </div>
+        <div class="current-status">
+            Status: <span id="current-flag">None</span>
+        </div>
+    </div>
+
+    <div id="workspace" class="hidden">
+        <div id="grid-view" class="view-mode"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
