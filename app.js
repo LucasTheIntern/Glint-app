@@ -1,4 +1,4 @@
-const VERSION = "v1.6";
+const VERSION = "v1.7";
 
 const state = {
     images: [],
@@ -44,10 +44,8 @@ function toggleHelp() {
 UI.helpBtn.addEventListener('click', toggleHelp);
 UI.closeHelp.addEventListener('click', toggleHelp);
 
-// Bind Aspect Ratio Dropdown to CSS Variable
 UI.arSelect.addEventListener('change', (e) => {
     document.documentElement.style.setProperty('--box-ar', e.target.value);
-    // Force a micro-tick update for visuals
     UI.arSelect.blur(); 
 });
 
@@ -258,8 +256,6 @@ function registerHotkeys() {
         }
 
         if (state.helpOpen || state.images.length === 0) return;
-
-        // Prevent hotkeys from firing if the dropdown is focused
         if (document.activeElement === UI.arSelect) return;
 
         switch(e.key.toUpperCase()) {
