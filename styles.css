@@ -71,7 +71,7 @@ button:hover { background-color: var(--accent); color: var(--bg); }
     position: absolute;
     top: 50%; 
     
-    /* Reduced to 35vw to prevent landscape overlap */
+    /* 35vw Center Width */
     width: 35vw; 
     max-width: 1000px;
     aspect-ratio: var(--box-ar);
@@ -92,21 +92,22 @@ button:hover { background-color: var(--accent); color: var(--bg); }
 .carousel-slot img {
     width: 100%;
     height: 100%;
-    object-fit: contain; 
-    background: #000;
+    /* STRICT ENFORCEMENT: Never crop, always map to box */
+    object-fit: contain !important; 
+    background: transparent !important;
 }
 
-/* ZERO-OVERLAP GEOMETRY (35vw Center Baseline) */
-/* Center spans 32.5% to 67.5% */
+/* TIGHT ZERO-OVERLAP GEOMETRY */
+/* Center = 35vw. Edges rest at 32.5% and 67.5% of the screen */
 .pos-0  { left: 50%; transform: translate(-50%, -50%) scale(1) rotateY(0deg); opacity: 1; z-index: 10; box-shadow: 0 0 0 1px #333, 0 20px 50px rgba(0,0,0,0.8); }
 
-/* L1/R1 = 21vw physical width. L1 spans 7.5% to 28.5%. R1 spans 71.5% to 92.5%. Guaranteed Gap. */
-.pos-n1 { left: 18%; transform: translate(-50%, -50%) scale(0.6) rotateY(15deg);  opacity: 0.6; z-index: 5; }
-.pos-p1 { left: 82%; transform: translate(-50%, -50%) scale(0.6) rotateY(-15deg); opacity: 0.6; z-index: 5; }
+/* L1/R1 = 60% Scale (21vw). Edges rest at ~10% and ~31%. This leaves a razor thin 1.5% gap from the center */
+.pos-n1 { left: 21%; transform: translate(-50%, -50%) scale(0.6) rotateY(15deg);  opacity: 0.7; z-index: 5; }
+.pos-p1 { left: 79%; transform: translate(-50%, -50%) scale(0.6) rotateY(-15deg); opacity: 0.7; z-index: 5; }
 
-/* L2/R2 = 10% scale (3.5vw width). Placed at the far absolute edges. Guaranteed Gap. */
-.pos-n2 { left: 4%;  transform: translate(-50%, -50%) scale(0.1) rotateY(25deg); opacity: 0.15; z-index: 2; }
-.pos-p2 { left: 96%; transform: translate(-50%, -50%) scale(0.1) rotateY(-25deg);opacity: 0.15; z-index: 2; }
+/* L2/R2 = 15% Scale (5vw). Tucked tightly just behind the shoulders of L1/R1 */
+.pos-n2 { left: 6%;  transform: translate(-50%, -50%) scale(0.15) rotateY(25deg); opacity: 0.2; z-index: 2; }
+.pos-p2 { left: 94%; transform: translate(-50%, -50%) scale(0.15) rotateY(-25deg);opacity: 0.2; z-index: 2; }
 
 /* Flag Overrides */
 .carousel-slot.flag-keep { box-shadow: 0 0 0 4px var(--keep); opacity: 1; }
