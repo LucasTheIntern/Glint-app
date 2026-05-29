@@ -10,20 +10,31 @@
 <body>
     <div id="startup">
         <h1>GLINT</h1>
-        <p>A frictionless culling engine.</p>
-        <button id="btn-open">Select Folder</button>
+        <p>Temporal culling engine engaged.</p>
+        <button id="btn-open">Initialize Drive</button>
         <div id="startup-version" class="version-tag"></div>
     </div>
 
     <div id="hud" class="hidden">
-        <div class="stats">
-            <span id="stat-count">0/0</span> | 
-            <span id="stat-keep" class="keep-text">0% Keep</span> | 
-            <span id="stat-reject" class="reject-text">0% Reject</span> |
-            <span id="stat-burst" class="burst-text">Burst: None</span>
+        
+        <div class="ring-container" title="Data Cores">
+            <svg class="gallifreyan-rings" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" class="ring-bg"></circle>
+                <circle cx="60" cy="60" r="40" class="ring-bg"></circle>
+                <circle cx="60" cy="60" r="25" class="ring-bg inner-spin" stroke-dasharray="10 20 40 10"></circle>
+                
+                <circle cx="60" cy="60" r="50" class="ring-data ring-keep" id="svg-keep"></circle>
+                <circle cx="60" cy="60" r="40" class="ring-data ring-reject" id="svg-reject"></circle>
+            </svg>
+            <div class="ring-text">
+                <span id="stat-count">0/0</span>
+            </div>
         </div>
+
         <div class="current-status">
-            <select id="ar-select" class="hud-select" title="Box Aspect Ratio">
+            <span id="stat-burst" class="burst-text">Vortex: Offline</span>
+            <span class="divider">|</span>
+            <select id="ar-select" class="hud-select" title="Dimensional Aspect">
                 <option value="3/2">3:2 (Landscape)</option>
                 <option value="2/3">2:3 (Portrait)</option>
                 <option value="16/9">16:9 (Widescreen)</option>
@@ -31,10 +42,10 @@
                 <option value="4/3">4:3 (Standard)</option>
             </select>
             <span class="divider">|</span>
-            Rating: <span id="current-rating" class="rating-text">☆☆☆☆☆</span> | 
-            Status: <span id="current-flag">None</span> |
+            Matrix: <span id="current-rating" class="rating-text">☆☆☆☆☆</span> | 
+            Flag: <span id="current-flag">None</span> |
             <span id="hud-version" class="hud-version"></span>
-            <button id="btn-help" class="icon-btn" title="Hotkeys">[ ? ]</button>
+            <button id="btn-help" class="icon-btn" title="Protocols">[ ? ]</button>
         </div>
     </div>
 
@@ -56,19 +67,19 @@
 
     <div id="hotkey-modal" class="hidden">
         <div class="modal-content">
-            <h2>Command Center</h2>
+            <h2>System Protocols</h2>
             <div class="hotkey-grid">
-                <div><kbd>←</kbd> <kbd>→</kbd></div><div>Navigate</div>
-                <div><kbd>C</kbd></div><div class="keep-text">Keep (✔)</div>
-                <div><kbd>X</kbd></div><div class="reject-text">Reject (✖)</div>
-                <div><kbd>1</kbd> - <kbd>5</kbd></div><div class="rating-text">Star Rating</div>
-                <div><kbd>Space</kbd></div><div>Toggle Zoom</div>
-                <div><kbd>Tab</kbd></div><div>Toggle Compare Burst</div>
-                <div><kbd>G</kbd></div><div>Return to Main View</div>
-                <div><kbd>D</kbd></div><div class="reject-text">Delete File (OS)</div>
+                <div><kbd>←</kbd> <kbd>→</kbd></div><div>Navigate Timeline</div>
+                <div><kbd>C</kbd></div><div class="keep-text">Preserve (✔)</div>
+                <div><kbd>X</kbd></div><div class="reject-text">Eradicate (✖)</div>
+                <div><kbd>1</kbd> - <kbd>5</kbd></div><div class="rating-text">Matrix Rating</div>
+                <div><kbd>Space</kbd></div><div>Toggle Focus</div>
+                <div><kbd>Tab</kbd></div><div>Toggle Convergence (Compare)</div>
+                <div><kbd>G</kbd></div><div>Return to Vortex</div>
+                <div><kbd>D</kbd></div><div class="reject-text">Delete Anomaly (OS)</div>
                 <div><kbd>?</kbd></div><div>Toggle this menu</div>
             </div>
-            <button id="btn-close-help">Close</button>
+            <button id="btn-close-help">Acknowledge</button>
         </div>
     </div>
 
