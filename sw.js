@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glint-v8';
+const CACHE_NAME = 'glint-v9';
 const ASSETS = [
     './',
     './index.html',
