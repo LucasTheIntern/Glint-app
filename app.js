@@ -1,5 +1,4 @@
-// BUMP VERSION HERE
-const VERSION = "v1.4";
+const VERSION = "v1.5";
 
 const state = {
     images: [],
@@ -7,7 +6,7 @@ const state = {
     currentIndex: 0,
     flags: { KEEP: new Set(), REJECT: new Set() },
     ratings: {},
-    view: 'CAROUSEL', // Default view changed to Carousel
+    view: 'CAROUSEL', 
     helpOpen: false
 };
 
@@ -68,7 +67,6 @@ async function scanImages(dirHandle) {
             });
         }
     }
-    
     rawImages.sort((a, b) => a.timestamp - b.timestamp);
     state.images = rawImages;
     groupBursts();
@@ -111,45 +109,66 @@ function bootEngine() {
 function renderCarousel() {
     if(state.images.length === 0) return;
 
-    // The 5 static DOM slots
-    const slots = [
-        { id: 'slot-n2', offset: -2 },
-        { id: 'slot-n1', offset: -1 },
-        { id: 'slot-0',  offset: 0 },
-        { id: 'slot-p1', offset: 1 },
-        { id: 'slot-p2', offset: 2 }
+    // Grab the 5 physical DOM nodes
+    const nodes = [
+        document.getElementById('c-node-0'),
+        document.getElementById('c-node-1'),
+        document.getElementById('c-node-2'),
+        document.getElementById('c-node-3'),
+        document.getElementById('c-node-4')
     ];
 
-    slots.forEach(slotInfo => {
-        const targetIndex = state.currentIndex + slotInfo.offset;
-        const slotEl = document.getElementById(slotInfo.id);
+    // Reset base classes
+    nodes.forEach(node => node.className = 'carousel-slot');
 
-        // Check edges (don't loop)
+    for (let i = -2; i <= 2; i++) {
+        const targetIndex = state.currentIndex + i;
+        
+        // Modulo math ensures targetIndex always maps to the same physical node
+        // preventing images from swapping containers abruptly.
+        const domIndex = ((targetIndex % 5) + 5) % 5;
+        const node = nodes[domIndex];
+
+        // Determine target 3D class
+        let posClass = 'pos-0';
+        if (i === -2) posClass = 'pos-n2';
+        if (i === -1) posClass = 'pos-n1';
+        if (i === 1) posClass = 'pos-p1';
+        if (i === 2) posClass = 'pos-p2';
+
+        // MAGIC TRICK: Prevent nodes from flying across the screen when they 
+        // wrap from position -2 to +2. We disable transition, reflow, and re-enable.
+        const prevClass = node.dataset.lastPos;
+        if ((prevClass === 'pos-p2' && posClass === 'pos-n2') ||
+            (prevClass === 'pos-n2' && posClass === 'pos-p2')) {
+            node.style.transition = 'none'; // Turn off animation
+            void node.offsetWidth;          // Force browser reflow
+        } else {
+            node.style.transition = '';     // Turn animation back on
+        }
+
+        // Apply new position
+        node.dataset.lastPos = posClass;
+        node.classList.add(posClass);
+
+        // Load image or hide if we hit the edge of the folder
         if (targetIndex >= 0 && targetIndex < state.images.length) {
             const imgData = state.images[targetIndex];
             
-            // Re-use or inject image tag
-            let imgEl = slotEl.querySelector('img');
+            let imgEl = node.querySelector('img');
             if (!imgEl) {
                 imgEl = document.createElement('img');
-                slotEl.appendChild(imgEl);
+                node.appendChild(imgEl);
             }
             imgEl.src = imgData.url;
-            
-            // Clean slate classes, re-apply base
-            slotEl.className = 'carousel-slot';
-            if (slotInfo.offset === 0) slotEl.classList.add('active'); // Center is active
-            
-            // Apply KEEP/REJECT visual flags
-            if (state.flags.KEEP.has(imgData.name)) slotEl.classList.add('flag-keep');
-            if (state.flags.REJECT.has(imgData.name)) slotEl.classList.add('flag-reject');
-            
+
+            // Visual flags
+            if (state.flags.KEEP.has(imgData.name)) node.classList.add('flag-keep');
+            if (state.flags.REJECT.has(imgData.name)) node.classList.add('flag-reject');
         } else {
-            // Null state for edges (first 2 and last 2 photos)
-            slotEl.innerHTML = '';
-            slotEl.className = 'carousel-slot empty';
+            node.classList.add('empty-slot');
         }
-    });
+    }
 }
 
 function updateView() {
@@ -214,7 +233,6 @@ function markImage(type) {
         state.flags.KEEP.delete(img.name);
     }
     
-    // Auto-advance
     if (state.currentIndex < state.images.length - 1) state.currentIndex++;
     updateView();
 }
