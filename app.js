@@ -1,4 +1,4 @@
-const VERSION = "v1.9";
+const VERSION = "v2.0";
 
 const state = {
     images: [],
@@ -20,8 +20,8 @@ const UI = {
     compareLeft: document.getElementById('compare-left'),
     compareRight: document.getElementById('compare-right'),
     count: document.getElementById('stat-count'),
-    keep: document.getElementById('stat-keep'),
-    reject: document.getElementById('stat-reject'),
+    ringKeep: document.getElementById('svg-keep'),
+    ringReject: document.getElementById('svg-reject'),
     burst: document.getElementById('stat-burst'),
     flag: document.getElementById('current-flag'),
     rating: document.getElementById('current-rating'),
@@ -36,7 +36,22 @@ const UI = {
 UI.startupVersion.innerText = VERSION;
 UI.hudVersion.innerText = VERSION;
 
-// --- MODAL & SETTINGS LOGIC ---
+// --- ALIEN TECH: HOLOGRAPHIC GLARE TRACKER ---
+document.addEventListener('mousemove', (e) => {
+    if (state.view !== 'CAROUSEL') return;
+    const centerNode = document.querySelector('.pos-0');
+    if (!centerNode) return;
+    
+    // Map window coords to percentages
+    const x = (e.clientX / window.innerWidth) * 100;
+    const y = (e.clientY / window.innerHeight) * 100;
+    
+    // Inject into CSS variables
+    centerNode.style.setProperty('--mouse-x', `${x}%`);
+    centerNode.style.setProperty('--mouse-y', `${y}%`);
+});
+
+// --- MODAL & SETTINGS ---
 function toggleHelp() {
     state.helpOpen = !state.helpOpen;
     UI.helpModal.classList.toggle('hidden', !state.helpOpen);
@@ -78,7 +93,7 @@ async function scanImages(dirHandle) {
     groupBursts();
 }
 
-// --- BURST ENGINE ---
+// --- TEMPORAL BURST ENGINE ---
 function groupBursts() {
     state.clusters = [];
     let currentCluster = [];
@@ -102,7 +117,7 @@ function getActiveBurst() {
     return state.clusters.find(cluster => cluster.some(img => img.index === state.currentIndex));
 }
 
-// --- VIEW CONTROLLER ---
+// --- ENGINE BOOT & RENDER ---
 function bootEngine() {
     UI.startup.classList.add('hidden');
     UI.workspace.classList.remove('hidden');
@@ -192,17 +207,26 @@ function updateView() {
     updateHUD();
 }
 
+// --- GALLIFREYAN RING MATH ---
 function updateHUD() {
     const total = state.images.length;
+    if(total === 0) return;
+    
     const img = state.images[state.currentIndex];
     UI.count.innerText = `${state.currentIndex + 1} / ${total}`;
     
-    UI.keep.innerText = `${Math.round((state.flags.KEEP.size/total)*100)}% Keep`;
-    UI.reject.innerText = `${Math.round((state.flags.REJECT.size/total)*100)}% Reject`;
+    // Calculate Ring Offsets (Circumference - (Percent * Circumference))
+    const keepPerc = state.flags.KEEP.size / total;
+    const rejectPerc = state.flags.REJECT.size / total;
+    
+    // r=50 -> c=314.15
+    UI.ringKeep.style.strokeDashoffset = 314.15 - (keepPerc * 314.15);
+    // r=40 -> c=251.32
+    UI.ringReject.style.strokeDashoffset = 251.32 - (rejectPerc * 251.32);
 
-    if (state.flags.KEEP.has(img.name)) UI.flag.innerText = "✔ KEEP";
-    else if (state.flags.REJECT.has(img.name)) UI.flag.innerText = "✖ REJECT";
-    else UI.flag.innerText = "None";
+    if (state.flags.KEEP.has(img.name)) UI.flag.innerText = "✔ PRESERVED";
+    else if (state.flags.REJECT.has(img.name)) UI.flag.innerText = "✖ ERADICATED";
+    else UI.flag.innerText = "UNRESOLVED";
 
     const rate = state.ratings[img.name] || 0;
     UI.rating.innerText = '★'.repeat(rate) + '☆'.repeat(5-rate);
@@ -210,13 +234,15 @@ function updateHUD() {
     const burst = getActiveBurst();
     if (burst && burst.length > 1) {
         const pos = burst.findIndex(b => b.index === img.index) + 1;
-        UI.burst.innerText = `Burst: ${pos}/${burst.length}`;
+        UI.burst.innerText = `Vortex: ${pos}/${burst.length}`;
+        UI.burst.style.color = 'var(--burst)';
     } else {
-        UI.burst.innerText = "Burst: None";
+        UI.burst.innerText = "Vortex: Clear";
+        UI.burst.style.color = '#555';
     }
 }
 
-// --- ENGINE LOGIC ---
+// --- CORE INPUT LOGIC ---
 function markImage(type) {
     const img = state.images[state.currentIndex];
     
@@ -244,7 +270,7 @@ async function deleteCurrentImage() {
         updateView();
     } catch (e) {
         console.warn("Delete failed.", e);
-        alert("Permission needed to delete files.");
+        alert("Anomaly deletion requires higher temporal privileges (File System Write Access).");
     }
 }
 
