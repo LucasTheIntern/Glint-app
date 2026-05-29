@@ -1,4 +1,4 @@
-const VERSION = "v1.5";
+const VERSION = "v1.6";
 
 const state = {
     images: [],
@@ -29,19 +29,27 @@ const UI = {
     helpModal: document.getElementById('hotkey-modal'),
     closeHelp: document.getElementById('btn-close-help'),
     startupVersion: document.getElementById('startup-version'),
-    hudVersion: document.getElementById('hud-version')
+    hudVersion: document.getElementById('hud-version'),
+    arSelect: document.getElementById('ar-select')
 };
 
 UI.startupVersion.innerText = VERSION;
 UI.hudVersion.innerText = VERSION;
 
-// --- MODAL LOGIC ---
+// --- MODAL & SETTINGS LOGIC ---
 function toggleHelp() {
     state.helpOpen = !state.helpOpen;
     UI.helpModal.classList.toggle('hidden', !state.helpOpen);
 }
 UI.helpBtn.addEventListener('click', toggleHelp);
 UI.closeHelp.addEventListener('click', toggleHelp);
+
+// Bind Aspect Ratio Dropdown to CSS Variable
+UI.arSelect.addEventListener('change', (e) => {
+    document.documentElement.style.setProperty('--box-ar', e.target.value);
+    // Force a micro-tick update for visuals
+    UI.arSelect.blur(); 
+});
 
 // --- FILE SYSTEM LAYER ---
 document.getElementById('btn-open').addEventListener('click', async () => {
@@ -109,7 +117,6 @@ function bootEngine() {
 function renderCarousel() {
     if(state.images.length === 0) return;
 
-    // Grab the 5 physical DOM nodes
     const nodes = [
         document.getElementById('c-node-0'),
         document.getElementById('c-node-1'),
@@ -118,40 +125,31 @@ function renderCarousel() {
         document.getElementById('c-node-4')
     ];
 
-    // Reset base classes
     nodes.forEach(node => node.className = 'carousel-slot');
 
     for (let i = -2; i <= 2; i++) {
         const targetIndex = state.currentIndex + i;
-        
-        // Modulo math ensures targetIndex always maps to the same physical node
-        // preventing images from swapping containers abruptly.
         const domIndex = ((targetIndex % 5) + 5) % 5;
         const node = nodes[domIndex];
 
-        // Determine target 3D class
         let posClass = 'pos-0';
         if (i === -2) posClass = 'pos-n2';
         if (i === -1) posClass = 'pos-n1';
         if (i === 1) posClass = 'pos-p1';
         if (i === 2) posClass = 'pos-p2';
 
-        // MAGIC TRICK: Prevent nodes from flying across the screen when they 
-        // wrap from position -2 to +2. We disable transition, reflow, and re-enable.
         const prevClass = node.dataset.lastPos;
         if ((prevClass === 'pos-p2' && posClass === 'pos-n2') ||
             (prevClass === 'pos-n2' && posClass === 'pos-p2')) {
-            node.style.transition = 'none'; // Turn off animation
-            void node.offsetWidth;          // Force browser reflow
+            node.style.transition = 'none'; 
+            void node.offsetWidth;          
         } else {
-            node.style.transition = '';     // Turn animation back on
+            node.style.transition = '';     
         }
 
-        // Apply new position
         node.dataset.lastPos = posClass;
         node.classList.add(posClass);
 
-        // Load image or hide if we hit the edge of the folder
         if (targetIndex >= 0 && targetIndex < state.images.length) {
             const imgData = state.images[targetIndex];
             
@@ -162,7 +160,6 @@ function renderCarousel() {
             }
             imgEl.src = imgData.url;
 
-            // Visual flags
             if (state.flags.KEEP.has(imgData.name)) node.classList.add('flag-keep');
             if (state.flags.REJECT.has(imgData.name)) node.classList.add('flag-reject');
         } else {
@@ -261,6 +258,9 @@ function registerHotkeys() {
         }
 
         if (state.helpOpen || state.images.length === 0) return;
+
+        // Prevent hotkeys from firing if the dropdown is focused
+        if (document.activeElement === UI.arSelect) return;
 
         switch(e.key.toUpperCase()) {
             case 'ARROWLEFT':
