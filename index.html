@@ -12,7 +12,7 @@
         <h1>GLINT</h1>
         <p>A frictionless culling engine.</p>
         <button id="btn-open">Select Folder</button>
-        <div class="version-tag">v1.2</div>
+        <div id="startup-version" class="version-tag"></div>
     </div>
 
     <div id="hud" class="hidden">
@@ -25,13 +25,20 @@
         <div class="current-status">
             Rating: <span id="current-rating" class="rating-text">☆☆☆☆☆</span> | 
             Status: <span id="current-flag">None</span> |
-            <span class="hud-version">v1.2</span>
+            <span id="hud-version" class="hud-version"></span>
             <button id="btn-help" class="icon-btn" title="Hotkeys">[ ? ]</button>
         </div>
     </div>
 
     <div id="workspace" class="hidden">
-        <div id="grid-view" class="view-mode"></div>
+        <div id="carousel-view" class="view-mode">
+            <div id="slot-n2" class="carousel-slot"></div>
+            <div id="slot-n1" class="carousel-slot"></div>
+            <div id="slot-0" class="carousel-slot active"></div>
+            <div id="slot-p1" class="carousel-slot"></div>
+            <div id="slot-p2" class="carousel-slot"></div>
+        </div>
+
         <div id="zoom-view" class="view-mode hidden"></div>
         <div id="compare-view" class="view-mode hidden">
             <div id="compare-left" class="compare-pane"></div>
@@ -49,7 +56,7 @@
                 <div><kbd>1</kbd> - <kbd>5</kbd></div><div class="rating-text">Star Rating</div>
                 <div><kbd>Space</kbd></div><div>Toggle Zoom</div>
                 <div><kbd>Tab</kbd></div><div>Toggle Compare Burst</div>
-                <div><kbd>G</kbd></div><div>Return to Grid</div>
+                <div><kbd>G</kbd></div><div>Return to Main View</div>
                 <div><kbd>D</kbd></div><div class="reject-text">Delete File (OS)</div>
                 <div><kbd>?</kbd></div><div>Toggle this menu</div>
             </div>
