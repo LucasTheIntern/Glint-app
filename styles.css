@@ -1,27 +1,34 @@
 :root {
-    /* TARDIS ALIEN PALETTE */
-    --bg-core: #040911; /* Deepest space */
-    --bg-void: #010203; /* Absolute black */
+    /* Core palette */
+    --bg-core: #040911;
+    --bg-void: #010203;
     --bg-glass: rgba(10, 18, 25, 0.4);
-    
-    --accent: #00ffcc; /* Hard-light Cyan */
-    --accent-dim: rgba(0, 255, 204, 0.2);
-    --keep: #00e676; /* Bright neon green */
-    --reject: #ff1744; /* Alert red */
-    --burst: #ffb703; /* Temporal amber */
+
+    /* FIX: define missing variables */
     --text: #e0f7fa;
-    
-    --box-ar: 3/2; 
+    --accent: #00ffcc;
+    --accent-dim: rgba(0, 255, 204, 0.3);
+    --keep: #00e676;
+    --reject: #ff5252;
+    --burst: #ffb703;
+
+    /* FIX: default aspect ratio */
+    --box-ar: 3/2;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
 
-/* 1. AMBIENT BREATHING VOID */
+/* Ambient void */
 body {
     background: radial-gradient(circle at 50% 50%, var(--bg-core) 0%, var(--bg-void) 100%);
     background-size: 150% 150%;
     color: var(--text);
-    font-family: 'Courier New', Courier, monospace; /* Terminal aesthetic */
+    font-family: 'Courier New', Courier, monospace;
     overflow: hidden;
     animation: voidPulse 10s ease-in-out infinite alternate;
 }
@@ -31,128 +38,217 @@ body {
     100% { background-position: top right; }
 }
 
-.hidden { display: none !important; }
+.hidden {
+    display: none !important;
+}
 
-/* Startup UI */
-#startup { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; position: relative; }
-#startup h1 { color: var(--accent); letter-spacing: 5px; text-shadow: 0 0 20px var(--accent-dim); }
-button { background-color: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 12px 24px; font-size: 1rem; font-family: inherit; cursor: pointer; border-radius: 2px; transition: all 0.3s; margin-top: 20px; box-shadow: 0 0 10px var(--accent-dim) inset; }
-button:hover { background-color: var(--accent); color: var(--bg-void); box-shadow: 0 0 20px var(--accent); }
-.version-tag { position: absolute; bottom: 20px; color: rgba(224, 247, 250, 0.3); font-size: 0.8rem; letter-spacing: 2px; }
+/* -------------------------
+   STARTUP
+------------------------- */
+#startup {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
 
-/* 2. GALLIFREYAN HUD */
-#hud { position: fixed; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 100; pointer-events: none; }
-.current-status { background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 4px; border: 1px solid #222; backdrop-filter: blur(5px); display: flex; align-items: center; font-size: 0.9rem;}
+button {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 12px 24px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 20px;
+}
 
-/* SVG Rings */
-.ring-container { position: relative; width: 100px; height: 100px; filter: drop-shadow(0 0 10px rgba(0,255,204,0.3)); }
-.gallifreyan-rings { width: 100%; height: 100%; transform: rotate(-90deg); /* Starts 12 o'clock */ }
-.ring-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 3; }
-.inner-spin { animation: spin 20s linear infinite; stroke-width: 1; stroke: rgba(255,183,3,0.5); }
-.ring-data { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.ring-keep { stroke: var(--keep); stroke-dasharray: 314.15; stroke-dashoffset: 314.15; } /* r=50, c=314.15 */
-.ring-reject { stroke: var(--reject); stroke-dasharray: 251.32; stroke-dashoffset: 251.32; } /* r=40, c=251.32 */
-.ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 5px var(--accent); }
+/* -------------------------
+   HUD
+------------------------- */
+#hud {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 100;
+    pointer-events: none;
+}
 
-@keyframes spin { 100% { transform: rotate(360deg); transform-origin: 60px 60px; } }
+.current-status {
+    background: rgba(0,0,0,0.5);
+    padding: 8px 15px;
+    border: 1px solid #222;
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+}
 
-.hud-version { color: #555; margin-left: 10px; font-size: 0.8rem; }
-.divider { margin: 0 10px; color: #444; }
-.hud-select { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 2px; padding: 4px 8px; font-family: inherit; font-size: 0.8rem; pointer-events: auto; outline: none; cursor: pointer; }
-.hud-select option { background: var(--bg-core); color: var(--text); }
-.icon-btn { margin: 0 0 0 10px; padding: 0; border: none; font-size: 0.9rem; pointer-events: auto; opacity: 0.6; box-shadow: none; }
-.icon-btn:hover { background: none; color: var(--burst); opacity: 1; box-shadow: none; }
+/* -------------------------
+   WORKSPACE
+------------------------- */
+#workspace {
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
 
-.keep-text { color: var(--keep); }
-.reject-text { color: var(--reject); }
-.burst-text { color: var(--burst); }
-.rating-text { color: var(--accent); letter-spacing: 2px; }
+.view-mode {
+    width: 100%;
+    height: 100%;
+}
 
-/* Workspace */
-#workspace { height: 100vh; width: 100vw; position: relative; }
-.view-mode { width: 100%; height: 100%; }
+/* -------------------------
+   CAROUSEL ENGINE
+------------------------- */
 
-/* 3. TIME VORTEX 3D ENGINE */
 #carousel-view {
     position: relative;
     width: 100vw;
     height: 100vh;
-    perspective: 1500px; /* Deep temporal tunnel */
+    perspective: 1500px;
     transform-style: preserve-3d;
 }
 
+/* FIX: anchor immediately to center */
 .carousel-slot {
     position: absolute;
-    top: 50%; 
-    width: 40vw; 
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40vw;
     max-width: 1200px;
     aspect-ratio: var(--box-ar);
-    
-    /* Holographic Glass */
-    background: var(--bg-glass); 
-    backdrop-filter: blur(15px);
-    border: 1px solid var(--accent-dim);
-    border-radius: 4px;
-    
-    transform-origin: center center;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), 
-                left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
-                opacity 0.4s ease-out, 
-                filter 0.4s ease-out;
-                
-    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-    overflow: hidden; 
 }
 
-/* 4. THE INTERACTIVE GLARE */
-.pos-0::after {
-    content: ''; 
-    position: absolute; 
-    inset: 0; 
-    z-index: 20; 
-    pointer-events: none;
-    /* Glare tracks mouse variables injected via JS */
-    background: radial-gradient(
-        600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-        rgba(0, 255, 204, 0.15), 
-        transparent 50%
-    );
-    mix-blend-mode: screen;
+/* Subtle loading placeholder */
+.carousel-slot::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.02);
+    opacity: 1;
+    transition: opacity 0.2s;
 }
 
+/* Remove placeholder once image exists */
+.carousel-slot:has(img[src])::before {
+    opacity: 0;
+}
+
+/* Image stability */
 .carousel-slot img {
     width: 100%;
     height: 100%;
-    /* STRICT ANTI-CROP */
-    object-fit: contain !important; 
+    object-fit: contain !important;
     background: transparent !important;
+
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
-/* VORTEX TUNNEL GEOMETRY */
-/* Center Focus */
-.pos-0  { left: 50%; transform: translate(-50%, -50%) translateZ(0) rotateY(0deg); opacity: 1; z-index: 10; filter: blur(0px); box-shadow: 0 0 0 1px var(--accent), 0 0 40px var(--accent-dim); }
+.carousel-slot img[src] {
+    opacity: 1;
+}
 
-/* Drifting Back L1/R1 (Rotated inward, fading) */
-.pos-n1 { left: 18%; transform: translate(-50%, -50%) translateZ(-300px) rotateY(25deg);  opacity: 0.6; z-index: 5; filter: blur(2px); }
-.pos-p1 { left: 82%; transform: translate(-50%, -50%) translateZ(-300px) rotateY(-25deg); opacity: 0.6; z-index: 5; filter: blur(2px); }
+/* -------------------------
+   VORTEX POSITIONS
+------------------------- */
 
-/* Deep Tunnel L2/R2 (Steep curve, heavy blur) */
-.pos-n2 { left: 2%;  transform: translate(-50%, -50%) translateZ(-800px) rotateY(45deg); opacity: 0.15; z-index: 2; filter: blur(6px); border-color: transparent;}
-.pos-p2 { left: 98%; transform: translate(-50%, -50%) translateZ(-800px) rotateY(-45deg);opacity: 0.15; z-index: 2; filter: blur(6px); border-color: transparent;}
+.pos-0  {
+    transform: translate(-50%, -50%) translateZ(0);
+    opacity: 1;
+    z-index: 10;
+}
 
-/* Flags */
-.carousel-slot.flag-keep { box-shadow: 0 0 0 2px var(--keep), 0 0 30px rgba(0, 230, 118, 0.3); }
-.carousel-slot.flag-reject { opacity: 0.1; filter: grayscale(100%) blur(2px); box-shadow: 0 0 0 1px var(--reject); }
-.carousel-slot.empty-slot { opacity: 0 !important; pointer-events: none; }
+.pos-n1 {
+    left: 18%;
+    transform: translate(-50%, -50%) translateZ(-300px) rotateY(25deg);
+    opacity: 0.6;
+}
 
-/* Compare & Zoom */
-#zoom-view { position: fixed; inset: 0; background-color: var(--bg-core); background-size: contain; background-position: center; background-repeat: no-repeat; z-index: 50; }
-#compare-view { position: fixed; inset: 0; display: flex; background-color: var(--bg-core); z-index: 50; }
-.compare-pane { flex: 1; height: 100%; background-size: contain; background-position: center; background-repeat: no-repeat; border-right: 1px solid #111; }
+.pos-p1 {
+    left: 82%;
+    transform: translate(-50%, -50%) translateZ(-300px) rotateY(-25deg);
+    opacity: 0.6;
+}
 
-/* Protocol Modal */
-#hotkey-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 200; }
-.modal-content { background: var(--bg-glass); padding: 40px; border-radius: 4px; border: 1px solid var(--accent-dim); min-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
-.modal-content h2 { color: var(--accent); margin-bottom: 30px; font-weight: normal; letter-spacing: 2px; }
-.hotkey-grid { display: grid; grid-template-columns: auto 1fr; gap: 15px 20px; text-align: left; align-items: center; margin-bottom: 30px; font-size: 0.95rem; }
-kbd { background: #000; color: var(--accent); padding: 4px 8px; border-radius: 2px; font-family: monospace; font-size: 0.85rem; border: 1px solid #333; }
+.pos-n2 {
+    left: 2%;
+    transform: translate(-50%, -50%) translateZ(-800px) rotateY(45deg);
+    opacity: 0.15;
+}
+
+.pos-p2 {
+    left: 98%;
+    transform: translate(-50%, -50%) translateZ(-800px) rotateY(-45deg);
+    opacity: 0.15;
+}
+
+/* -------------------------
+   FLAGS
+------------------------- */
+
+.carousel-slot.flag-keep {
+    box-shadow: 0 0 0 2px var(--keep);
+}
+
+.carousel-slot.flag-reject {
+    opacity: 0.1;
+    filter: grayscale(100%);
+}
+
+/* FIX: stable empty state */
+.carousel-slot.empty-slot {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+/* -------------------------
+   ZOOM + COMPARE
+------------------------- */
+
+#zoom-view {
+    position: fixed;
+    inset: 0;
+    background-color: var(--bg-core);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+#compare-view {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    background-color: var(--bg-core);
+}
+
+.compare-pane {
+    flex: 1;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* -------------------------
+   MODAL
+------------------------- */
+
+#hotkey-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-glass);
+    padding: 40px;
+    border: 1px solid var(--accent-dim);
+}
+``
