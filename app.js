@@ -1,4 +1,4 @@
-const VERSION = "v2.1";
+const VERSION = "v1.9";
 
 const state = {
     images: [],
@@ -6,7 +6,7 @@ const state = {
     currentIndex: 0,
     flags: { KEEP: new Set(), REJECT: new Set() },
     ratings: {},
-    view: 'CAROUSEL',
+    view: 'CAROUSEL', 
     helpOpen: false
 };
 
@@ -20,8 +20,8 @@ const UI = {
     compareLeft: document.getElementById('compare-left'),
     compareRight: document.getElementById('compare-right'),
     count: document.getElementById('stat-count'),
-    ringKeep: document.getElementById('svg-keep'),
-    ringReject: document.getElementById('svg-reject'),
+    keep: document.getElementById('stat-keep'),
+    reject: document.getElementById('stat-reject'),
     burst: document.getElementById('stat-burst'),
     flag: document.getElementById('current-flag'),
     rating: document.getElementById('current-rating'),
@@ -36,111 +36,88 @@ const UI = {
 UI.startupVersion.innerText = VERSION;
 UI.hudVersion.innerText = VERSION;
 
-/* -------------------------
-   MEMORY-SAFE IMAGE LAYER
-------------------------- */
+// --- MODAL & SETTINGS LOGIC ---
 
-// Lazy loader
-async function ensureImageURL(img) {
-    if (!img.url) {
-        const file = await img.handle.getFile();
-        img.url = URL.createObjectURL(file);
-    }
-    return img.url;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function toggleHelp() {
+    state.helpOpen = !state.helpOpen;
+    UI.helpModal.classList.toggle('hidden', !state.helpOpen);
 }
+UI.helpBtn.addEventListener('click', toggleHelp);
+UI.closeHelp.addEventListener('click', toggleHelp);
 
-// Cleanup everything not in carousel window
-function cleanupURLs(activeIndexes) {
-    state.images.forEach((img, i) => {
-        if (!activeIndexes.includes(i) && img.url) {
-            URL.revokeObjectURL(img.url);
-            img.url = null;
-        }
-    });
-}
+UI.arSelect.addEventListener('change', (e) => {
+    document.documentElement.style.setProperty('--box-ar', e.target.value);
+    UI.arSelect.blur(); 
+});
 
-/* -------------------------
-   INPUT / FILE SYSTEM
-------------------------- */
-
+// --- FILE SYSTEM LAYER ---
 document.getElementById('btn-open').addEventListener('click', async () => {
     try {
         const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await scanImages(dirHandle);
         bootEngine();
     } catch (err) {
-        console.log("Cancelled:", err);
+        console.log("Error or cancelled:", err);
     }
 });
 
 async function scanImages(dirHandle) {
     let rawImages = [];
-    let count = 0;
-
     for await (const entry of dirHandle.values()) {
         if (entry.kind === 'file' && entry.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
             const file = await entry.getFile();
-
             rawImages.push({
                 handle: entry,
                 name: entry.name,
                 timestamp: file.lastModified,
-                url: null // IMPORTANT: no preload
+                url: URL.createObjectURL(file) 
             });
-
-            count++;
-
-            // yield every 50 files
-            if (count % 50 === 0) {
-                await new Promise(r => setTimeout(r, 0));
-            }
         }
     }
-
     rawImages.sort((a, b) => a.timestamp - b.timestamp);
     state.images = rawImages;
     groupBursts();
 }
 
-/* -------------------------
-   BURST LOGIC
-------------------------- */
-
+// --- BURST ENGINE ---
 function groupBursts() {
     state.clusters = [];
-    let current = [];
+    let currentCluster = [];
 
     state.images.forEach((img, i) => {
         img.index = i;
+        if (i === 0) { currentCluster.push(img); return; }
 
-        if (i === 0) {
-            current.push(img);
-            return;
-        }
-
-        const delta = img.timestamp - state.images[i - 1].timestamp;
-
+        const delta = img.timestamp - state.images[i-1].timestamp;
         if (delta < 1500) {
-            current.push(img);
+            currentCluster.push(img);
         } else {
-            state.clusters.push(current);
-            current = [img];
+            if(currentCluster.length > 0) state.clusters.push(currentCluster);
+            currentCluster = [img];
         }
     });
-
-    if (current.length) state.clusters.push(current);
+    if(currentCluster.length > 0) state.clusters.push(currentCluster);
 }
 
 function getActiveBurst() {
-    return state.clusters.find(c =>
-        c.some(img => img.index === state.currentIndex)
-    );
+    return state.clusters.find(cluster => cluster.some(img => img.index === state.currentIndex));
 }
 
-/* -------------------------
-   ENGINE BOOT
-------------------------- */
-
+// --- VIEW CONTROLLER ---
 function bootEngine() {
     UI.startup.classList.add('hidden');
     UI.workspace.classList.remove('hidden');
@@ -150,12 +127,8 @@ function bootEngine() {
     registerHotkeys();
 }
 
-/* -------------------------
-   RENDER ENGINE
-------------------------- */
-
-async function renderCarousel() {
-    if (state.images.length === 0) return;
+function renderCarousel() {
+    if(state.images.length === 0) return;
 
     const nodes = [
         document.getElementById('c-node-0'),
@@ -165,9 +138,7 @@ async function renderCarousel() {
         document.getElementById('c-node-4')
     ];
 
-    nodes.forEach(n => n.className = 'carousel-slot');
-
-    const activeIndexes = [];
+    nodes.forEach(node => node.className = 'carousel-slot');
 
     for (let i = -2; i <= 2; i++) {
         const targetIndex = state.currentIndex + i;
@@ -180,10 +151,19 @@ async function renderCarousel() {
         if (i === 1) posClass = 'pos-p1';
         if (i === 2) posClass = 'pos-p2';
 
+        const prevClass = node.dataset.lastPos;
+        if ((prevClass === 'pos-p2' && posClass === 'pos-n2') ||
+            (prevClass === 'pos-n2' && posClass === 'pos-p2')) {
+            node.style.transition = 'none'; 
+            void node.offsetWidth;          
+        } else {
+            node.style.transition = '';     
+        }
+
+        node.dataset.lastPos = posClass;
         node.classList.add(posClass);
 
         if (targetIndex >= 0 && targetIndex < state.images.length) {
-            activeIndexes.push(targetIndex);
             const imgData = state.images[targetIndex];
 
             let imgEl = node.querySelector('img');
@@ -191,24 +171,18 @@ async function renderCarousel() {
                 imgEl = document.createElement('img');
                 node.appendChild(imgEl);
             }
+            imgEl.src = imgData.url;
 
-            try {
-                imgEl.src = await ensureImageURL(imgData);
-            } catch {
-                node.classList.add('empty-slot');
-            }
-
+            if (state.flags.KEEP.has(imgData.name)) node.classList.add('flag-keep');
+            if (state.flags.REJECT.has(imgData.name)) node.classList.add('flag-reject');
         } else {
             node.classList.add('empty-slot');
         }
     }
-
-    cleanupURLs(activeIndexes);
 }
 
-async function updateView() {
-    if (state.images.length === 0) return;
-
+function updateView() {
+    if(state.images.length === 0) return;
     const img = state.images[state.currentIndex];
 
     UI.carousel.classList.toggle('hidden', state.view !== 'CAROUSEL');
@@ -216,70 +190,129 @@ async function updateView() {
     UI.compare.classList.toggle('hidden', state.view !== 'COMPARE');
 
     if (state.view === 'CAROUSEL') {
-        await renderCarousel();
-    }
-
-    if (state.view === 'ZOOM') {
-        UI.zoom.style.backgroundImage =
-            `url('${await ensureImageURL(img)}')`;
-    }
-
-    if (state.view === 'COMPARE') {
+        renderCarousel();
+    } else if (state.view === 'ZOOM') {
+        UI.zoom.style.backgroundImage = `url('${img.url}')`;
+    } else if (state.view === 'COMPARE') {
         const burst = getActiveBurst();
-
-        UI.compareLeft.style.backgroundImage =
-            `url('${await ensureImageURL(img)}')`;
-
+        UI.compareLeft.style.backgroundImage = `url('${img.url}')`;
         let compareImg = img;
-
         if (burst && burst.length > 1) {
-            const idx = burst.findIndex(b => b.index === img.index) + 1;
-            compareImg = burst[idx] || burst[idx - 2];
+            const nextIdx = burst.findIndex(b => b.index === img.index) + 1;
+            compareImg = burst[nextIdx] ? burst[nextIdx] : burst[nextIdx - 2];
         }
-
-        UI.compareRight.style.backgroundImage =
-            `url('${await ensureImageURL(compareImg)}')`;
+        UI.compareRight.style.backgroundImage = `url('${compareImg.url}')`;
     }
 
     updateHUD();
 }
 
-/* -------------------------
-   UI
-------------------------- */
 
 function updateHUD() {
     const total = state.images.length;
-    if (!total) return;
 
+
+    const img = state.images[state.currentIndex];
     UI.count.innerText = `${state.currentIndex + 1} / ${total}`;
+
+    UI.keep.innerText = `${Math.round((state.flags.KEEP.size/total)*100)}% Keep`;
+    UI.reject.innerText = `${Math.round((state.flags.REJECT.size/total)*100)}% Reject`;
+
+
+
+
+
+
+
+    if (state.flags.KEEP.has(img.name)) UI.flag.innerText = "✔ KEEP";
+    else if (state.flags.REJECT.has(img.name)) UI.flag.innerText = "✖ REJECT";
+    else UI.flag.innerText = "None";
+
+    const rate = state.ratings[img.name] || 0;
+    UI.rating.innerText = '★'.repeat(rate) + '☆'.repeat(5-rate);
+
+    const burst = getActiveBurst();
+    if (burst && burst.length > 1) {
+        const pos = burst.findIndex(b => b.index === img.index) + 1;
+        UI.burst.innerText = `Burst: ${pos}/${burst.length}`;
+
+    } else {
+        UI.burst.innerText = "Burst: None";
+
+    }
 }
 
-/* -------------------------
-   INPUT
-------------------------- */
+// --- ENGINE LOGIC ---
+function markImage(type) {
+    const img = state.images[state.currentIndex];
+
+    if (type === 'KEEP') {
+        state.flags.KEEP.add(img.name);
+        state.flags.REJECT.delete(img.name);
+    } else if (type === 'REJECT') {
+        state.flags.REJECT.add(img.name);
+        state.flags.KEEP.delete(img.name);
+    }
+
+    if (state.currentIndex < state.images.length - 1) state.currentIndex++;
+    updateView();
+}
+
+async function deleteCurrentImage() {
+    const img = state.images[state.currentIndex];
+    try {
+        await img.handle.remove();
+        state.images.splice(state.currentIndex, 1);
+        URL.revokeObjectURL(img.url);
+
+        if (state.currentIndex >= state.images.length) state.currentIndex--;
+        groupBursts();
+        updateView();
+    } catch (e) {
+        console.warn("Delete failed.", e);
+        alert("Permission needed to delete files.");
+    }
+}
 
 function registerHotkeys() {
     window.addEventListener('keydown', (e) => {
-        if (state.images.length === 0) return;
+        if (e.key === '?') {
+            toggleHelp();
+            return;
+        }
 
-        switch (e.key) {
-            case 'ArrowRight':
-                if (state.currentIndex < state.images.length - 1)
-                    state.currentIndex++;
+        if (state.helpOpen || state.images.length === 0) return;
+        if (document.activeElement === UI.arSelect) return;
+
+        switch(e.key.toUpperCase()) {
+            case 'ARROWLEFT':
+                if (state.currentIndex > 0) state.currentIndex--;
                 updateView();
                 break;
-
-            case 'ArrowLeft':
-                if (state.currentIndex > 0)
-                    state.currentIndex--;
+            case 'ARROWRIGHT':
+                if (state.currentIndex < state.images.length - 1) state.currentIndex++;
                 updateView();
                 break;
-
-            case ' ':
+            case 'C': markImage('KEEP'); break;
+            case 'X': markImage('REJECT'); break;
+            case 'D': deleteCurrentImage(); break;
+            case ' ': 
                 e.preventDefault();
                 state.view = state.view === 'ZOOM' ? 'CAROUSEL' : 'ZOOM';
                 updateView();
+                break;
+            case 'TAB':
+                e.preventDefault();
+                state.view = state.view === 'COMPARE' ? 'CAROUSEL' : 'COMPARE';
+                updateView();
+                break;
+            case 'G':
+                state.view = 'CAROUSEL';
+                updateView();
+                break;
+            case '1': case '2': case '3': case '4': case '5':
+                state.ratings[state.images[state.currentIndex].name] = parseInt(e.key);
+                updateHUD();
                 break;
         }
     });
