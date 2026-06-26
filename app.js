@@ -1,4 +1,4 @@
-const VERSION = "v2.0";
+const VERSION = "v2.1";
 
 const state = {
     images: [],
@@ -6,7 +6,7 @@ const state = {
     currentIndex: 0,
     flags: { KEEP: new Set(), REJECT: new Set() },
     ratings: {},
-    view: 'CAROUSEL', 
+    view: 'CAROUSEL',
     helpOpen: false
 };
 
@@ -36,99 +36,126 @@ const UI = {
 UI.startupVersion.innerText = VERSION;
 UI.hudVersion.innerText = VERSION;
 
-// --- ALIEN TECH: HOLOGRAPHIC GLARE TRACKER ---
-document.addEventListener('mousemove', (e) => {
-    if (state.view !== 'CAROUSEL') return;
-    const centerNode = document.querySelector('.pos-0');
-    if (!centerNode) return;
-    
-    // Map window coords to percentages
-    const x = (e.clientX / window.innerWidth) * 100;
-    const y = (e.clientY / window.innerHeight) * 100;
-    
-    // Inject into CSS variables
-    centerNode.style.setProperty('--mouse-x', `${x}%`);
-    centerNode.style.setProperty('--mouse-y', `${y}%`);
-});
+/* -------------------------
+   MEMORY-SAFE IMAGE LAYER
+------------------------- */
 
-// --- MODAL & SETTINGS ---
-function toggleHelp() {
-    state.helpOpen = !state.helpOpen;
-    UI.helpModal.classList.toggle('hidden', !state.helpOpen);
+// Lazy loader
+async function ensureImageURL(img) {
+    if (!img.url) {
+        const file = await img.handle.getFile();
+        img.url = URL.createObjectURL(file);
+    }
+    return img.url;
 }
-UI.helpBtn.addEventListener('click', toggleHelp);
-UI.closeHelp.addEventListener('click', toggleHelp);
 
-UI.arSelect.addEventListener('change', (e) => {
-    document.documentElement.style.setProperty('--box-ar', e.target.value);
-    UI.arSelect.blur(); 
-});
+// Cleanup everything not in carousel window
+function cleanupURLs(activeIndexes) {
+    state.images.forEach((img, i) => {
+        if (!activeIndexes.includes(i) && img.url) {
+            URL.revokeObjectURL(img.url);
+            img.url = null;
+        }
+    });
+}
 
-// --- FILE SYSTEM LAYER ---
+/* -------------------------
+   INPUT / FILE SYSTEM
+------------------------- */
+
 document.getElementById('btn-open').addEventListener('click', async () => {
     try {
         const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
         await scanImages(dirHandle);
         bootEngine();
     } catch (err) {
-        console.log("Error or cancelled:", err);
+        console.log("Cancelled:", err);
     }
 });
 
 async function scanImages(dirHandle) {
     let rawImages = [];
+    let count = 0;
+
     for await (const entry of dirHandle.values()) {
         if (entry.kind === 'file' && entry.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
             const file = await entry.getFile();
+
             rawImages.push({
                 handle: entry,
                 name: entry.name,
                 timestamp: file.lastModified,
-                url: URL.createObjectURL(file) 
+                url: null // IMPORTANT: no preload
             });
+
+            count++;
+
+            // yield every 50 files
+            if (count % 50 === 0) {
+                await new Promise(r => setTimeout(r, 0));
+            }
         }
     }
+
     rawImages.sort((a, b) => a.timestamp - b.timestamp);
     state.images = rawImages;
     groupBursts();
 }
 
-// --- TEMPORAL BURST ENGINE ---
+/* -------------------------
+   BURST LOGIC
+------------------------- */
+
 function groupBursts() {
     state.clusters = [];
-    let currentCluster = [];
-    
+    let current = [];
+
     state.images.forEach((img, i) => {
         img.index = i;
-        if (i === 0) { currentCluster.push(img); return; }
-        
-        const delta = img.timestamp - state.images[i-1].timestamp;
+
+        if (i === 0) {
+            current.push(img);
+            return;
+        }
+
+        const delta = img.timestamp - state.images[i - 1].timestamp;
+
         if (delta < 1500) {
-            currentCluster.push(img);
+            current.push(img);
         } else {
-            if(currentCluster.length > 0) state.clusters.push(currentCluster);
-            currentCluster = [img];
+            state.clusters.push(current);
+            current = [img];
         }
     });
-    if(currentCluster.length > 0) state.clusters.push(currentCluster);
+
+    if (current.length) state.clusters.push(current);
 }
 
 function getActiveBurst() {
-    return state.clusters.find(cluster => cluster.some(img => img.index === state.currentIndex));
+    return state.clusters.find(c =>
+        c.some(img => img.index === state.currentIndex)
+    );
 }
 
-// --- ENGINE BOOT & RENDER ---
+/* -------------------------
+   ENGINE BOOT
+------------------------- */
+
 function bootEngine() {
     UI.startup.classList.add('hidden');
     UI.workspace.classList.remove('hidden');
     UI.hud.classList.remove('hidden');
-    
+
     updateView();
     registerHotkeys();
 }
 
-function renderCarousel() {
-    if(state.images.length === 0) return;
+/* -------------------------
+   RENDER ENGINE
+------------------------- */
+
+async function renderCarousel() {
+    if (state.images.length === 0) return;
 
     const nodes = [
         document.getElementById('c-node-0'),
@@ -138,7 +165,9 @@ function renderCarousel() {
         document.getElementById('c-node-4')
     ];
 
-    nodes.forEach(node => node.className = 'carousel-slot');
+    nodes.forEach(n => n.className = 'carousel-slot');
+
+    const activeIndexes = [];
 
     for (let i = -2; i <= 2; i++) {
         const targetIndex = state.currentIndex + i;
@@ -151,168 +180,106 @@ function renderCarousel() {
         if (i === 1) posClass = 'pos-p1';
         if (i === 2) posClass = 'pos-p2';
 
-        const prevClass = node.dataset.lastPos;
-        if ((prevClass === 'pos-p2' && posClass === 'pos-n2') ||
-            (prevClass === 'pos-n2' && posClass === 'pos-p2')) {
-            node.style.transition = 'none'; 
-            void node.offsetWidth;          
-        } else {
-            node.style.transition = '';     
-        }
-
-        node.dataset.lastPos = posClass;
         node.classList.add(posClass);
 
         if (targetIndex >= 0 && targetIndex < state.images.length) {
+            activeIndexes.push(targetIndex);
             const imgData = state.images[targetIndex];
-            
+
             let imgEl = node.querySelector('img');
             if (!imgEl) {
                 imgEl = document.createElement('img');
                 node.appendChild(imgEl);
             }
-            imgEl.src = imgData.url;
 
-            if (state.flags.KEEP.has(imgData.name)) node.classList.add('flag-keep');
-            if (state.flags.REJECT.has(imgData.name)) node.classList.add('flag-reject');
+            try {
+                imgEl.src = await ensureImageURL(imgData);
+            } catch {
+                node.classList.add('empty-slot');
+            }
+
         } else {
             node.classList.add('empty-slot');
         }
     }
+
+    cleanupURLs(activeIndexes);
 }
 
-function updateView() {
-    if(state.images.length === 0) return;
+async function updateView() {
+    if (state.images.length === 0) return;
+
     const img = state.images[state.currentIndex];
-    
+
     UI.carousel.classList.toggle('hidden', state.view !== 'CAROUSEL');
     UI.zoom.classList.toggle('hidden', state.view !== 'ZOOM');
     UI.compare.classList.toggle('hidden', state.view !== 'COMPARE');
 
     if (state.view === 'CAROUSEL') {
-        renderCarousel();
-    } else if (state.view === 'ZOOM') {
-        UI.zoom.style.backgroundImage = `url('${img.url}')`;
-    } else if (state.view === 'COMPARE') {
+        await renderCarousel();
+    }
+
+    if (state.view === 'ZOOM') {
+        UI.zoom.style.backgroundImage =
+            `url('${await ensureImageURL(img)}')`;
+    }
+
+    if (state.view === 'COMPARE') {
         const burst = getActiveBurst();
-        UI.compareLeft.style.backgroundImage = `url('${img.url}')`;
+
+        UI.compareLeft.style.backgroundImage =
+            `url('${await ensureImageURL(img)}')`;
+
         let compareImg = img;
+
         if (burst && burst.length > 1) {
-            const nextIdx = burst.findIndex(b => b.index === img.index) + 1;
-            compareImg = burst[nextIdx] ? burst[nextIdx] : burst[nextIdx - 2];
+            const idx = burst.findIndex(b => b.index === img.index) + 1;
+            compareImg = burst[idx] || burst[idx - 2];
         }
-        UI.compareRight.style.backgroundImage = `url('${compareImg.url}')`;
+
+        UI.compareRight.style.backgroundImage =
+            `url('${await ensureImageURL(compareImg)}')`;
     }
 
     updateHUD();
 }
 
-// --- GALLIFREYAN RING MATH ---
+/* -------------------------
+   UI
+------------------------- */
+
 function updateHUD() {
     const total = state.images.length;
-    if(total === 0) return;
-    
-    const img = state.images[state.currentIndex];
+    if (!total) return;
+
     UI.count.innerText = `${state.currentIndex + 1} / ${total}`;
-    
-    // Calculate Ring Offsets (Circumference - (Percent * Circumference))
-    const keepPerc = state.flags.KEEP.size / total;
-    const rejectPerc = state.flags.REJECT.size / total;
-    
-    // r=50 -> c=314.15
-    UI.ringKeep.style.strokeDashoffset = 314.15 - (keepPerc * 314.15);
-    // r=40 -> c=251.32
-    UI.ringReject.style.strokeDashoffset = 251.32 - (rejectPerc * 251.32);
-
-    if (state.flags.KEEP.has(img.name)) UI.flag.innerText = "✔ PRESERVED";
-    else if (state.flags.REJECT.has(img.name)) UI.flag.innerText = "✖ ERADICATED";
-    else UI.flag.innerText = "UNRESOLVED";
-
-    const rate = state.ratings[img.name] || 0;
-    UI.rating.innerText = '★'.repeat(rate) + '☆'.repeat(5-rate);
-
-    const burst = getActiveBurst();
-    if (burst && burst.length > 1) {
-        const pos = burst.findIndex(b => b.index === img.index) + 1;
-        UI.burst.innerText = `Vortex: ${pos}/${burst.length}`;
-        UI.burst.style.color = 'var(--burst)';
-    } else {
-        UI.burst.innerText = "Vortex: Clear";
-        UI.burst.style.color = '#555';
-    }
 }
 
-// --- CORE INPUT LOGIC ---
-function markImage(type) {
-    const img = state.images[state.currentIndex];
-    
-    if (type === 'KEEP') {
-        state.flags.KEEP.add(img.name);
-        state.flags.REJECT.delete(img.name);
-    } else if (type === 'REJECT') {
-        state.flags.REJECT.add(img.name);
-        state.flags.KEEP.delete(img.name);
-    }
-    
-    if (state.currentIndex < state.images.length - 1) state.currentIndex++;
-    updateView();
-}
-
-async function deleteCurrentImage() {
-    const img = state.images[state.currentIndex];
-    try {
-        await img.handle.remove();
-        state.images.splice(state.currentIndex, 1);
-        URL.revokeObjectURL(img.url);
-        
-        if (state.currentIndex >= state.images.length) state.currentIndex--;
-        groupBursts();
-        updateView();
-    } catch (e) {
-        console.warn("Delete failed.", e);
-        alert("Anomaly deletion requires higher temporal privileges (File System Write Access).");
-    }
-}
+/* -------------------------
+   INPUT
+------------------------- */
 
 function registerHotkeys() {
     window.addEventListener('keydown', (e) => {
-        if (e.key === '?') {
-            toggleHelp();
-            return;
-        }
+        if (state.images.length === 0) return;
 
-        if (state.helpOpen || state.images.length === 0) return;
-        if (document.activeElement === UI.arSelect) return;
-
-        switch(e.key.toUpperCase()) {
-            case 'ARROWLEFT':
-                if (state.currentIndex > 0) state.currentIndex--;
+        switch (e.key) {
+            case 'ArrowRight':
+                if (state.currentIndex < state.images.length - 1)
+                    state.currentIndex++;
                 updateView();
                 break;
-            case 'ARROWRIGHT':
-                if (state.currentIndex < state.images.length - 1) state.currentIndex++;
+
+            case 'ArrowLeft':
+                if (state.currentIndex > 0)
+                    state.currentIndex--;
                 updateView();
                 break;
-            case 'C': markImage('KEEP'); break;
-            case 'X': markImage('REJECT'); break;
-            case 'D': deleteCurrentImage(); break;
-            case ' ': 
+
+            case ' ':
                 e.preventDefault();
                 state.view = state.view === 'ZOOM' ? 'CAROUSEL' : 'ZOOM';
                 updateView();
-                break;
-            case 'TAB':
-                e.preventDefault();
-                state.view = state.view === 'COMPARE' ? 'CAROUSEL' : 'COMPARE';
-                updateView();
-                break;
-            case 'G':
-                state.view = 'CAROUSEL';
-                updateView();
-                break;
-            case '1': case '2': case '3': case '4': case '5':
-                state.ratings[state.images[state.currentIndex].name] = parseInt(e.key);
-                updateHUD();
                 break;
         }
     });
